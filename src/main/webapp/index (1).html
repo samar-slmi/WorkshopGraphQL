@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestion des Modules — GraphQL API</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --white: #ffffff;
+      --bg: #f5f6f8;
+      --surface: #ffffff;
+      --border: #e2e5eb;
+      --border-light: #f0f2f5;
+      --text: #1a1f2e;
+      --text-secondary: #5a6170;
+      --text-muted: #9ba3af;
+      --accent: #1e3a5f;
+      --accent-light: #e8eef6;
+      --accent2: #2e7d5e;
+      --accent2-light: #e8f5f0;
+      --red: #c0392b;
+      --red-light: #fdf0ef;
+      --orange: #d35400;
+      --orange-light: #fef4ed;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      --radius: 10px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    nav {
+      background: var(--accent);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .nav-brand { display: flex; align-items: center; gap: 12px; }
+    .nav-logo {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 13px; font-weight: 500; color: #fff; letter-spacing: -1px;
+    }
+    .nav-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; font-weight: 600; }
+    .nav-subtitle { font-size: 0.72rem; color: rgba(255,255,255,0.55); letter-spacing: 1.5px; text-transform: uppercase; }
+    .nav-pill { font-size: 0.7rem; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); letter-spacing: 0.8px; text-transform: uppercase; font-weight: 500; }
+    .page { max-width: 1200px; margin: 0 auto; padding: 32px 24px 60px; }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+    .page-desc { font-size: 0.9rem; color: var(--text-secondary); font-weight: 300; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 20px; overflow: hidden; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border-light); background: #fafbfc; }
+    .panel-title { font-size: 0.72rem; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-secondary); display: flex; align-items: center; gap: 7px; }
+    .panel-title::before { content: ''; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; display: inline-block; }
+    .endpoint-row { display: flex; gap: 10px; align-items: center; padding: 14px 18px; flex-wrap: wrap; }
+    .endpoint-input { flex: 1; min-width: 250px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 9px 13px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .endpoint-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    .btn { font-family: 'Source Sans 3', sans-serif; font-weight: 600; font-size: 0.85rem; padding: 9px 20px; border-radius: 7px; border: none; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #2a4f7c; box-shadow: var(--shadow); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+    .query-editor { font-family: 'Source Code Pro', monospace; font-size: 0.82rem; color: #2e7d5e; background: #fafffe; border: none; width: 100%; padding: 16px 18px; resize: vertical; min-height: 110px; outline: none; line-height: 1.7; border-top: 1px solid var(--border-light); }
+    .alert-error { background: var(--red-light); border: 1px solid #f5c6c3; border-left: 4px solid var(--red); border-radius: var(--radius); padding: 12px 16px; font-size: 0.85rem; color: var(--red); margin-bottom: 20px; display: none; }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px; }
+    .stat-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+    .stat-value { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; line-height: 1; }
+    .stat-value.total { color: var(--accent); }
+    .stat-value.transversal { color: #7b5ea7; }
+    .stat-value.professionnel { color: var(--accent2); }
+    .stat-value.recherche { color: var(--orange); }
+    .stat-sub { font-size: 0.75rem; color: var(--text-muted); }
+    .table-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .table-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border-light); background: #fafbfc; flex-wrap: wrap; gap: 10px; }
+    .filter-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .filter-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-muted); margin-right: 4px; }
+    .filter-btn { font-family: 'Source Sans 3', sans-serif; font-size: 0.8rem; font-weight: 500; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .table-count { font-size: 0.8rem; color: var(--text-secondary); }
+    .table-count strong { color: var(--text); font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f7f8fa; }
+    th { font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-secondary); padding: 11px 16px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 13px 16px; font-size: 0.875rem; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.12s; animation: rowIn 0.3s ease both; }
+    tbody tr:hover { background: #f7f9fc; }
+    @keyframes rowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .matricule-cell { font-family: 'Source Code Pro', monospace; font-size: 0.78rem; color: var(--text-secondary); background: var(--bg); padding: 3px 7px; border-radius: 4px; border: 1px solid var(--border); display: inline-block; }
+    .nom-cell { font-weight: 600; color: var(--text); }
+    .badge { display: inline-block; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 5px; }
+    .badge-TRANSVERSAL { background: #f0ebf8; color: #7b5ea7; }
+    .badge-PROFESSIONNEL { background: var(--accent2-light); color: var(--accent2); }
+    .badge-RECHERCHE { background: var(--orange-light); color: var(--orange); }
+    .num-cell { font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .ue-toggle { background: none; border: 1px solid var(--border); border-radius: 5px; padding: 4px 9px; font-size: 0.75rem; color: var(--text-secondary); cursor: pointer; font-family: 'Source Sans 3', sans-serif; transition: all 0.15s; }
+    .ue-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .ue-row { display: none; background: #f7f9ff; }
+    .ue-row.open { display: table-row; }
+    .ue-cell { padding: 10px 16px 14px 32px !important; border-bottom: 1px solid var(--border-light) !important; }
+    .ue-inner { display: inline-flex; gap: 28px; flex-wrap: wrap; }
+    .ue-field { display: flex; flex-direction: column; gap: 1px; }
+    .ue-field-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 600; }
+    .ue-field-value { font-size: 0.82rem; color: var(--text); font-weight: 500; }
+    .state-box { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .state-box .icon { font-size: 2.2rem; margin-bottom: 12px; }
+    .state-box strong { display: block; font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 6px; }
+    .state-box p { font-size: 0.85rem; }
+    .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    footer { text-align: center; padding: 24px; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border-light); margin-top: 40px; }
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      nav { padding: 0 16px; }
+      .page { padding: 20px 14px 40px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">{}</div>
+    <div>
+      <div class="nav-title">Portail Académique</div>
+      <div class="nav-subtitle">GraphQL API Explorer</div>
+    </div>
+  </div>
+  <div><span class="nav-pill">Workshop GraphQL</span></div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Gestion des Modules</h1>
+    <p class="page-desc">Consultation des modules d'enseignement via l'API GraphQL</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Configuration &amp; Requête</span>
+    </div>
+    <div class="endpoint-row">
+      <input class="endpoint-input" type="text" id="endpointInput"
+        value="http://localhost:8081/WorkshopGraphQL_war_exploded/graphql"
+        placeholder="URL de l'endpoint GraphQL"/>
+      <button class="btn btn-primary" onclick="fetchModules()">▶ Exécuter</button>
+      <button class="btn btn-ghost" onclick="resetQuery()">↺ Reset</button>
+    </div>
+    <textarea class="query-editor" id="queryInput">query {
+  getallmodules {
+    matricule
+    nom
+    coefficient
+    volumeHoraire
+    type
+    uniteEnseignement {
+      code
+      domaine
+      responsable
+      credits
+      semestre
+    }
+  }
+}</textarea>
+  </div>
+
+  <div id="errorBox" class="alert-error"></div>
+
+  <div id="statsRow" class="stats-row" style="display:none">
+    <div class="stat-card">
+      <span class="stat-label">Total Modules</span>
+      <span class="stat-value total" id="statTotal">0</span>
+      <span class="stat-sub">modules chargés</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Transversal</span>
+      <span class="stat-value transversal" id="statT">0</span>
+      <span class="stat-sub">modules</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Professionnel</span>
+      <span class="stat-value professionnel" id="statP">0</span>
+      <span class="stat-sub">modules</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Recherche</span>
+      <span class="stat-value recherche" id="statR">0</span>
+      <span class="stat-sub">modules</span>
+    </div>
+  </div>
+
+  <div class="table-panel">
+    <div class="table-toolbar">
+      <div class="filter-bar">
+        <span class="filter-label">Filtrer :</span>
+        <button class="filter-btn active" onclick="setFilter('ALL',this)">Tous</button>
+        <button class="filter-btn" onclick="setFilter('TRANSVERSAL',this)">Transversal</button>
+        <button class="filter-btn" onclick="setFilter('PROFESSIONNEL',this)">Professionnel</button>
+        <button class="filter-btn" onclick="setFilter('RECHERCHE',this)">Recherche</button>
+      </div>
+      <div class="table-count" id="tableCount"></div>
+    </div>
+    <div id="tableContent">
+      <div class="state-box">
+        <div class="icon">📋</div>
+        <strong>Aucune donnée</strong>
+        <p>Configurez l'URL et cliquez sur Exécuter pour charger les modules.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Workshop GraphQL &nbsp;·&nbsp; Atelier mise en place API GraphQL &nbsp;·&nbsp; Apache Tomcat 9 &nbsp;·&nbsp; Java 17
+</footer>
+
+<script>
+  let allModules = [];
+  let activeFilter = 'ALL';
+
+  async function fetchModules() {
+    const endpoint = document.getElementById('endpointInput').value.trim();
+    const query = document.getElementById('queryInput').value.trim();
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'none';
+    document.getElementById('tableContent').innerHTML = '<div class="state-box"><div class="spinner"></div><strong>Chargement…</strong><p>Connexion à l\'API GraphQL en cours.</p></div>';
+    document.getElementById('statsRow').style.display = 'none';
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+      const data = await res.json();
+      if (data.errors) throw new Error(data.errors.map(e => e.message).join('\n'));
+      allModules = data.data?.getallmodules || [];
+      activeFilter = 'ALL';
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.filter-btn').classList.add('active');
+      updateStats();
+      renderTable();
+    } catch (err) {
+      document.getElementById('tableContent').innerHTML = '<div class="state-box"><div class="icon">⚠️</div><strong>Erreur de connexion</strong><p>Vérifiez que Tomcat est démarré et que l\'URL est correcte.</p></div>';
+      errorBox.textContent = '⚠ ' + err.message;
+      errorBox.style.display = 'block';
+    }
+  }
+
+  function updateStats() {
+    const t = allModules.filter(m => m.type === 'TRANSVERSAL').length;
+    const p = allModules.filter(m => m.type === 'PROFESSIONNEL').length;
+    const r = allModules.filter(m => m.type === 'RECHERCHE').length;
+    document.getElementById('statTotal').textContent = allModules.length;
+    document.getElementById('statT').textContent = t;
+    document.getElementById('statP').textContent = p;
+    document.getElementById('statR').textContent = r;
+    document.getElementById('statsRow').style.display = 'grid';
+  }
+
+  function setFilter(type, btn) {
+    activeFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+  }
+
+  function renderTable() {
+    const filtered = activeFilter === 'ALL' ? allModules : allModules.filter(m => m.type === activeFilter);
+    document.getElementById('tableCount').innerHTML = `<strong>${filtered.length}</strong> résultat${filtered.length !== 1 ? 's' : ''}`;
+    if (filtered.length === 0) {
+      document.getElementById('tableContent').innerHTML = '<div class="state-box"><div class="icon">🔍</div><strong>Aucun résultat</strong><p>Aucun module pour ce filtre.</p></div>';
+      return;
+    }
+    const rows = filtered.map((m, i) => {
+      const ue = m.uniteEnseignement;
+      const rowId = 'ue-' + i;
+      const ueBtn = ue
+        ? `<button class="ue-toggle" onclick="toggleUE('${rowId}')">▾ Voir UE</button>`
+        : `<span style="color:var(--text-muted);font-size:0.8rem">—</span>`;
+      const ueRow = ue ? `
+        <tr class="ue-row" id="${rowId}">
+          <td class="ue-cell" colspan="6">
+            <div class="ue-inner">
+              <div class="ue-field"><span class="ue-field-label">Code</span><span class="ue-field-value">${ue.code}</span></div>
+              <div class="ue-field"><span class="ue-field-label">Domaine</span><span class="ue-field-value">${ue.domaine}</span></div>
+              <div class="ue-field"><span class="ue-field-label">Responsable</span><span class="ue-field-value">${ue.responsable}</span></div>
+              <div class="ue-field"><span class="ue-field-label">Semestre</span><span class="ue-field-value">S${ue.semestre}</span></div>
+              <div class="ue-field"><span class="ue-field-label">Crédits</span><span class="ue-field-value">${ue.credits} crédits</span></div>
+            </div>
+          </td>
+        </tr>` : '';
+      return `
+        <tr style="animation-delay:${i*0.04}s">
+          <td><span class="matricule-cell">${m.matricule}</span></td>
+          <td><span class="nom-cell">${m.nom}</span></td>
+          <td><span class="badge badge-${m.type}">${m.type}</span></td>
+          <td class="num-cell">${m.coefficient}</td>
+          <td class="num-cell">${m.volumeHoraire}h</td>
+          <td>${ueBtn}</td>
+        </tr>${ueRow}`;
+    }).join('');
+
+    document.getElementById('tableContent').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Matricule</th>
+            <th>Nom du Module</th>
+            <th>Type</th>
+            <th>Coefficient</th>
+            <th>Vol. Horaire</th>
+            <th>Unité d'Ens.</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function toggleUE(id) {
+    const row = document.getElementById(id);
+    if (row) row.classList.toggle('open');
+  }
+
+  function resetQuery() {
+    document.getElementById('queryInput').value = `query {
+  getallmodules {
+    matricule
+    nom
+    coefficient
+    volumeHoraire
+    type
+    uniteEnseignement {
+      code
+      domaine
+      responsable
+      credits
+      semestre
+    }
+  }
+}`;
+  }
+</script>
+</body>
+</html>
